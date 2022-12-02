@@ -1,6 +1,6 @@
 use std::fs;
 
-type Day2 = Vec<(Move, Move)>;
+type Day2 = Vec<(char, char)>;
 
 #[derive(PartialEq)]
 enum Move {
@@ -10,6 +10,14 @@ enum Move {
 }
 
 impl Move {
+    fn from_code(letter_code: char) -> Self {
+        match letter_code {
+            move_code if move_code == 'A' || move_code == 'X' => Move::Rock,
+            move_code if move_code == 'B' || move_code == 'Y' => Move::Paper,
+            _ => Move::Scissors,
+        }
+    }
+
     fn play(&self, move2: &Self) -> u32 {
         match (self, move2) {
             (move1, move2) if move1 == move2 => 3,
@@ -43,10 +51,10 @@ fn read_input(path: &str) -> Day2 {
         .lines()
         .map(|l| {
             let mut split = l.split_whitespace();
-            let op_move = split.next().unwrap();
-            let response = split.next().unwrap();
+            let op_move = split.next().unwrap().chars().next().unwrap();
+            let response = split.next().unwrap().chars().next().unwrap();
 
-            (to_move_type(op_move), to_move_type(response))
+            (op_move, response)
         })
         .collect::<Day2>()
 }
@@ -54,7 +62,8 @@ fn read_input(path: &str) -> Day2 {
 fn puzzle1(input: &Day2) -> u32 {
     let mut total_points: u32 = 0;
     for (op_move, response) in input.iter() {
-        let round_points = op_move.play(response) + response.points();
+        let your_response = Move::from_code(*response);
+        let round_points = Move::from_code(*op_move).play(&your_response) + your_response.points();
 
         total_points += round_points;
     }
