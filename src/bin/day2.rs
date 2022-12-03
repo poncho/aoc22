@@ -2,7 +2,7 @@ use std::fs;
 
 type Day2 = Vec<(char, char)>;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 enum Move {
     Rock,
     Paper,
@@ -12,27 +12,43 @@ enum Move {
 impl Move {
     fn from_code(letter_code: char) -> Self {
         match letter_code {
-            move_code if move_code == 'A' || move_code == 'X' => Move::Rock,
-            move_code if move_code == 'B' || move_code == 'Y' => Move::Paper,
-            _ => Move::Scissors,
+            move_code if move_code == 'A' || move_code == 'X' => Self::Rock,
+            move_code if move_code == 'B' || move_code == 'Y' => Self::Paper,
+            _ => Self::Scissors,
         }
     }
 
     fn play(&self, move2: &Self) -> u32 {
         match (self, move2) {
             (move1, move2) if move1 == move2 => 3,
-            (Move::Rock, Move::Paper) => 6,
-            (Move::Paper, Move::Scissors) => 6,
-            (Move::Scissors, Move::Rock) => 6,
+            (Self::Rock, Self::Paper) => 6,
+            (Self::Paper, Self::Scissors) => 6,
+            (Self::Scissors, Self::Rock) => 6,
             _ => 0,
         }
     }
 
     fn points(&self) -> u32 {
         match self {
-            Move::Rock => 1,
-            Move::Paper => 2,
-            Move::Scissors => 3,
+            Self::Rock => 1,
+            Self::Paper => 2,
+            Self::Scissors => 3,
+        }
+    }
+
+    fn winning_response(&self) -> Self {
+        match self {
+            Self::Rock => Self::Paper,
+            Self::Paper => Self::Scissors,
+            Self::Scissors => Self::Rock,
+        }
+    }
+
+    fn losing_response(&self) -> Self {
+        match self {
+            Self::Rock => Self::Scissors,
+            Self::Paper => Self::Rock,
+            Self::Scissors => Self::Paper,
         }
     }
 }
@@ -40,8 +56,10 @@ impl Move {
 fn main() {
     let input: Day2 = read_input("inputs/day2.txt");
     let p1_result = puzzle1(&input);
+    let p2_result = puzzle2(&input);
 
     println!("Puzzle #1: {}", p1_result);
+    println!("Puzzle #2: {}", p2_result);
 }
 
 fn read_input(path: &str) -> Day2 {
@@ -61,9 +79,9 @@ fn read_input(path: &str) -> Day2 {
 
 fn puzzle1(input: &Day2) -> u32 {
     let mut total_points: u32 = 0;
-    for (op_move, response) in input.iter() {
-        let your_response = Move::from_code(*response);
-        let round_points = Move::from_code(*op_move).play(&your_response) + your_response.points();
+    for (op_move_code, response_code) in input.iter() {
+        let response = Move::from_code(*response_code);
+        let round_points = Move::from_code(*op_move_code).play(&response) + response.points();
 
         total_points += round_points;
     }
@@ -71,12 +89,21 @@ fn puzzle1(input: &Day2) -> u32 {
     total_points
 }
 
-fn to_move_type(move_code: &str) -> Move {
-    match move_code {
-        move_code if move_code == "A" || move_code == "X" => Move::Rock,
-        move_code if move_code == "B" || move_code == "Y" => Move::Paper,
-        _ => Move::Scissors,
-    }
+fn puzzle2(input: &Day2) -> u32 {
+    input
+        .iter()
+        .map(|(op_move_code, result_code)| {
+            let op_move = Move::from_code(*op_move_code);
+
+            let response = match result_code {
+                'X' => op_move.losing_response(),
+                'Y' => op_move,
+                _ => op_move.winning_response(),
+            };
+
+            op_move.play(&response) + response.points()
+        })
+        .sum()
 }
 
 #[cfg(test)]
@@ -92,5 +119,12 @@ mod tests {
         let test_input = test_input();
 
         assert_eq!(puzzle1(&test_input), 15)
+    }
+
+    #[test]
+    fn puzzle2_test() {
+        let test_input = test_input();
+
+        assert_eq!(puzzle2(&test_input), 12)
     }
 }
