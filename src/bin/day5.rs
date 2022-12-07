@@ -10,10 +10,12 @@ struct Movement {
 }
 
 fn main() {
-    let (mut state, movements): Day5 = read_input("inputs/day5.txt");
-    let p1_result = puzzle1(&mut state, &movements);
+    let (state, movements): Day5 = read_input("inputs/day5.txt");
+    let p1_result = puzzle1(state.clone(), &movements);
+    let p2_result = puzzle2(state, &movements);
 
     println!("Puzzle #1: {}", p1_result);
+    println!("Puzzle #2: {}", p2_result);
 }
 
 fn read_input(path: &str) -> Day5 {
@@ -79,13 +81,24 @@ fn parse_moves(moves: &str) -> Vec<Movement> {
         .collect()
 }
 
-fn puzzle1(state: &mut [Vec<char>], movements: &[Movement]) -> String {
+fn puzzle1(mut state: Vec<Vec<char>>, movements: &[Movement]) -> String {
     for m in movements.iter() {
         for _ in 0..m.amount {
             let crate_code = state[m.from - 1].pop().unwrap();
 
             state[m.to - 1].push(crate_code);
         }
+    }
+
+    state.iter().map(|stack| stack.last().unwrap()).collect()
+}
+
+fn puzzle2(mut state: Vec<Vec<char>>, movements: &[Movement]) -> String {
+    for m in movements.iter() {
+        let new_length = state[m.from - 1].len() - m.amount;
+        let mut crates_to_move = state[m.from - 1].split_off(new_length);
+
+        state[m.to - 1].append(&mut crates_to_move);
     }
 
     state.iter().map(|stack| stack.last().unwrap()).collect()
@@ -101,8 +114,15 @@ mod tests {
 
     #[test]
     fn puzzle1_test() {
-        let (mut state, movements) = test_input();
+        let (state, movements) = test_input();
 
-        assert_eq!(puzzle1(&mut state, &movements), "CMZ")
+        assert_eq!(puzzle1(state, &movements), "CMZ")
+    }
+
+    #[test]
+    fn puzzle2_test() {
+        let (state, movements) = test_input();
+
+        assert_eq!(puzzle2(state, &movements), "MCD")
     }
 }
