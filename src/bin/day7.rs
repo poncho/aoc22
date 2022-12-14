@@ -66,9 +66,13 @@ impl System {
 
 fn main() {
     let input = read_input("inputs/day7.txt");
-    let p1_result = puzzle1(&input);
+    let directories = list_directories(&input);
+
+    let p1_result = puzzle1(&directories);
+    let p2_result = puzzle2(&directories);
 
     println!("Puzzle #1: {}", p1_result);
+    println!("Puzzle #2: {}", p2_result);
 }
 
 fn read_input(path: &str) -> Day7 {
@@ -79,7 +83,32 @@ fn read_input(path: &str) -> Day7 {
         .collect()
 }
 
-fn puzzle1(input: &Day7) -> usize {
+fn puzzle1(directories: &HashMap<usize, (usize, usize)>) -> usize {
+    directories
+        .iter()
+        .filter(|&(_k, v)| v.0 <= 100_000)
+        .map(|(_k, v)| v.0)
+        .sum()
+}
+
+fn puzzle2(directories: &HashMap<usize, (usize, usize)>) -> usize {
+    let total_disk_space = 70000000;
+    let required_space_for_update = 30000000;
+    let (used_space, _parent) = directories[&1];
+
+    println!("USED SPACE: {}", used_space);
+
+    let needed_free_space = required_space_for_update - (total_disk_space - used_space);
+
+    directories
+        .values()
+        .filter(|(size, _)| *size >= needed_free_space)
+        .map(|(size, _)| *size)
+        .min()
+        .unwrap()
+}
+
+fn list_directories(input: &Day7) -> HashMap<usize, (usize, usize)> {
     let mut system = System {
         current_dir: 0,
         files: vec![],
@@ -120,10 +149,6 @@ fn puzzle1(input: &Day7) -> usize {
     }
 
     group
-        .iter()
-        .filter(|&(_k, v)| v.0 <= 100_000)
-        .map(|(_k, v)| v.0)
-        .sum()
 }
 
 fn run_line(system: &mut System, line: &str) {
@@ -162,10 +187,18 @@ fn run_command(system: &mut System, mut args: std::str::SplitWhitespace) {
 mod tests {
     use super::*;
 
+    fn test_input() -> HashMap<usize, (usize, usize)> {
+        let input = read_input("inputs/day7_test.txt");
+        list_directories(&input)
+    }
+
     #[test]
     fn puzzle1_test() {
-        let test_input = read_input("inputs/day7_test.txt");
+        assert_eq!(puzzle1(&test_input()), 95437);
+    }
 
-        assert_eq!(puzzle1(&test_input), 95437);
+    #[test]
+    fn puzzle2_test() {
+        assert_eq!(puzzle2(&test_input()), 24933642);
     }
 }
