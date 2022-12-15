@@ -5,8 +5,10 @@ type Day8 = Vec<Vec<u32>>;
 fn main() {
     let input = read_input("inputs/day8.txt");
     let p1_result = puzzle1(&input);
+    let p2_result = puzzle2(&input);
 
     println!("Puzzle #1: {}", p1_result);
+    println!("Puzzle #2: {}", p2_result);
 }
 
 fn read_input(path: &str) -> Day8 {
@@ -98,6 +100,77 @@ fn visible_from_right(input: &Day8, line_idx: usize, column_idx: usize, current_
     true
 }
 
+fn puzzle2(input: &Day8) -> usize {
+    let column_size = input.len();
+    let line_size = input.first().unwrap().len();
+
+    input
+        .iter()
+        .enumerate()
+        .map(|(line_idx, line)| {
+            line.iter()
+                .enumerate()
+                .map(|(column_idx, &tree)| {
+                    if line_idx == 0
+                        || line_idx == line_size - 1
+                        || column_idx == 0
+                        || column_idx == column_size - 1
+                    {
+                        0
+                    } else {
+                        let left = left_max_sight(&line[..column_idx], tree);
+                        let right = right_max_sight(&line[column_idx + 1..], tree);
+                        let top = top_max_sight(&input[..line_idx], column_idx, tree);
+                        let bottom = bottom_max_sight(&input[line_idx + 1..], column_idx, tree);
+
+                        top * bottom * left * right
+                    }
+                })
+                .max()
+                .unwrap()
+        })
+        .max()
+        .unwrap()
+}
+
+fn left_max_sight(line: &[u32], tree: u32) -> usize {
+    match line.iter().rev().enumerate().find(|(_index, &t)| t >= tree) {
+        Some((distance, _)) => distance + 1,
+        None => line.len(),
+    }
+}
+
+fn right_max_sight(line: &[u32], tree: u32) -> usize {
+    match line.iter().enumerate().find(|(_index, &t)| t >= tree) {
+        Some((distance, _)) => distance + 1,
+        None => line.len(),
+    }
+}
+
+fn top_max_sight(slice: &[Vec<u32>], column_idx: usize, tree: u32) -> usize {
+    for (line_idx, line) in slice.iter().rev().enumerate() {
+        if let Some(t) = line.get(column_idx) {
+            if *t >= tree {
+                return line_idx + 1;
+            }
+        }
+    }
+
+    slice.len()
+}
+
+fn bottom_max_sight(slice: &[Vec<u32>], column_idx: usize, tree: u32) -> usize {
+    for (line_idx, line) in slice.iter().enumerate() {
+        if let Some(t) = line.get(column_idx) {
+            if *t >= tree {
+                return line_idx + 1;
+            }
+        }
+    }
+
+    slice.len()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -111,5 +184,12 @@ mod tests {
         let test_input = test_input();
 
         assert_eq!(puzzle1(&test_input), 21)
+    }
+
+    #[test]
+    fn puzzle2_test() {
+        let test_input = test_input();
+
+        assert_eq!(puzzle2(&test_input), 8)
     }
 }
